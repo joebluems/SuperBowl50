@@ -5,9 +5,45 @@ Read NFL game data into Spark and try to predict the over/under for the big game
 
 
 
-### Launching Spark shell & loading the data
-
-
+### Launching Spark shell & loading the data into an RDD
+Note: I used spark version 1.5.2 for this analysis. Download Spark here: http://spark.apache.org/downloads.html<br>
+First - start Spark shell, load imports and read the raw data into an RDD<br>
+linux> /Users/jblue/spark-1.5.2-bin-hadoop2.4<br>
+linux> ./bin/spark-shell<br>
+<b>import scala.math<br>
+import scala.util.Try<br>
+val rawData = sc.textFile("seasons1990_2015")<br>
+val data = rawData.map(line => line.split('|').map(elem => elem.trim))<br>
+data.first()<br>
+</b><br>
+Next - create a function to parse the raw game data into a new RDD and cache:<br>
+<b>def parseData(parts:Array[String]):(String, Double, Double, Double, Double, Double, Double, Double, Double, Double,String) = {<br>
+  var time = 0.0<br>
+  var regex = ":.*$".r<br>
+  if (regex.replaceAllIn(parts(1),"").toDouble>2 && parts(1).endsWith("pm")) { time = 1.0; }<br>
+  var roof = 0.0<br>
+  if (parts(2).matches(".*dome.*") || parts(2).matches(".*closed.*")) { roof = 1.0; }<br>
+  var field = 0.0<br>
+  if (parts(3).matches("grass.*")) { field = 1.0; }<br>
+  var temperature = -99.0<br>
+  var humidity = -99.0<br>
+  var wind = -99.0<br>
+  val weather = ",".r.replaceAllIn(parts(4),"").split(" ")<br>
+  for(i <- 0 until weather.length) {<br>
+        if (weather(i).matches("degrees")) { temperature = weather(i-1).toDouble;}<br>
+        if (weather(i).matches("humidity")) { humidity = "%".r.replaceAllIn(weather(i+1),"").toDouble;}<br>
+        if (weather(i).matches("mph")) { wind = weather(i-1).toDouble;}        if (weather(i).matches("chill")) { temperature = weather(i+1).toDouble;}<br>
+  }<br>
+  val spread = {try{scala.math.abs(parts(5).toDouble)} catch {case e: Exception => -99.0 }}<br>
+  val overunder = parts(6).toDouble<br>
+  val points = parts(7).toDouble<br>
+  (parts(0),time,roof,field,temperature,humidity,wind,spread,overunder,points,parts(8))<br>
+}<br>
+val rawFeatures = data.map{ parts=><br>
+  parseData(parts)<br>
+}<br>
+rawFeatures.cache<br>
+</b><br>
 ### Exploring the data
 Run these shell commands to explore the data:<br>
 Find lowest-scoring games:<br>
