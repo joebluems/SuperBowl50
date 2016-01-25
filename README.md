@@ -32,7 +32,8 @@ Next - create a function to parse the raw game data into a new RDD and cache:<br
   for(i <- 0 until weather.length) {<br>
         if (weather(i).matches("degrees")) { temperature = weather(i-1).toDouble;}<br>
         if (weather(i).matches("humidity")) { humidity = "%".r.replaceAllIn(weather(i+1),"").toDouble;}<br>
-        if (weather(i).matches("mph")) { wind = weather(i-1).toDouble;}        if (weather(i).matches("chill")) { temperature = weather(i+1).toDouble;}<br>
+        if (weather(i).matches("mph")) { wind = weather(i-1).toDouble;}        <br>
+        if (weather(i).matches("chill")) { temperature = weather(i+1).toDouble;}<br>
   }<br>
   val spread = {try{scala.math.abs(parts(5).toDouble)} catch {case e: Exception => -99.0 }}<br>
   val overunder = parts(6).toDouble<br>
