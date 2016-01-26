@@ -47,7 +47,7 @@ rawFeatures.cache<br>
 ### Exploring the data
 Run these shell commands to explore the data:<br>
 Find lowest-scoring games:<br>
-<b>rawFeatures.map{game=> (game._1,game._10) }.sortBy(_._2).take(5).foreach(println)<br></b>
+<b>rawFeatures.map{game=> (game.\_1,game.\_10) }.sortBy(_._2).take(5).foreach(println)<br></b>
 Find highest-scoring games:<br>
 <b>rawFeatures.map{game=> (game.\_1,game.\_10) }.sortBy(_._2,false).take(5).foreach(println)<br></b>
 Find games with the largest spread:<br>
