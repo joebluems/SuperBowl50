@@ -18,7 +18,7 @@ data.first()<br>
 Next - create a function to parse the raw game data into a new RDD and cache:<br>
 <b>def parseData(parts:Array[String]):(String, Double, Double, Double, Double, Double, Double, Double, Double, Double,String) = {<br>
   var time = 0.0<br>
-  var regex = ":.*$".r <br>
+  var regex = ":.\*$".r <br>
   if (regex.replaceAllIn(parts(1),"").toDouble>2 && parts(1).endsWith("pm")) { time = 1.0; }<br>
   var roof = 0.0<br>
   if (parts(2).matches(".\*dome.\*") || parts(2).matches(".\*closed.\*")) { roof = 1.0; }<br>
