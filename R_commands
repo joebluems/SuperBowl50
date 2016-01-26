@@ -1,0 +1,23 @@
+library("colorspace")
+### note: this plots over/under and actual scored by season ####
+seasons <- read.csv("stats",stringsAsFactors=FALSE,header=FALSE)
+colnames(seasons) <- c("season","overunder","points")
+attach(seasons)
+
+pcol <- c("red","blue","forestgreen")
+yl=c(30,50)
+plot(season,overunder,ylim=yl,main="NFL Scoring by Season", xlab="Seasons", ylab="Points per Game",
+  col=pcol[1],pch=20,cex=1.5,type='b')
+  points(season,points,col=pcol[2],pch=20,cex=1.5,type='b')
+  legend(2005,35,c("avg. over/under","avg. actual"),pch=c(20,20),col=c(pcol[1],pcol[2]))
+
+### note: this shows distribution of nearest neighbors ####
+neighbors <- read.csv("knn",stringsAsFactors=FALSE,header=FALSE)
+colnames(neighbors) <- c("game","year","distance","points")
+attach(neighbors)
+medianPoints <- median(points)
+hist(points, main="Distribution of Points in Similar Games since 2002",xlab="Points Scored",ylab="Number of Games", 
+   ylim=c(0,20),breaks=20)
+abline(v=c(45),lty=2,lwd=8,col="red")
+abline(v=c(medianPoints),lty=2,lwd=8,col="green")
+legend(10,17,c("SuperBowl Over/Under","Median Points, Similar Games"),pch=c(20,20),col=c("red","green"))

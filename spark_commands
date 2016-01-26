@@ -1,0 +1,100 @@
+import scala.math
+import scala.util.Try
+
+### read data ###
+val rawData = sc.textFile("/Users/jblue/OverUnder/seasons1990_2015")
+val data = rawData.map(line => line.split('|').map(elem => elem.trim))
+data.first()
+res3: Array[String] = Array(Pittsburgh Steelers  at  New England Patriots - September 10th, 2015, 8:40pm, outdoors, fieldturf, 65 degrees relative humidity 0%, wind 7 mph, -7.0, 52.0, 49)
+
+#### feature extraction ####
+def parseData(parts:Array[String]):(String, Double, Double, Double, Double, Double, Double, Double, Double, Double,String) = { 
+  var time = 0.0
+  var regex = ":.*$".r
+  if (regex.replaceAllIn(parts(1),"").toDouble>2 && parts(1).endsWith("pm")) { time = 1.0; }
+  var roof = 0.0
+  if (parts(2).matches(".*dome.*") || parts(2).matches(".*closed.*")) { roof = 1.0; }
+  var field = 0.0
+  if (parts(3).matches("grass.*")) { field = 1.0; }
+  var temperature = -99.0
+  var humidity = -99.0
+  var wind = -99.0
+  val weather = ",".r.replaceAllIn(parts(4),"").split(" ")
+  for(i <- 0 until weather.length) {
+        if (weather(i).matches("degrees")) { temperature = weather(i-1).toDouble;}
+        if (weather(i).matches("humidity")) { humidity = "%".r.replaceAllIn(weather(i+1),"").toDouble;}
+        if (weather(i).matches("mph")) { wind = weather(i-1).toDouble;}
+        if (weather(i).matches("chill")) { temperature = weather(i+1).toDouble;}
+  }
+  val spread = {try{scala.math.abs(parts(5).toDouble)} catch {case e: Exception => -99.0 }}
+  val overunder = parts(6).toDouble
+  val points = parts(7).toDouble
+  (parts(0),time,roof,field,temperature,humidity,wind,spread,overunder,points,parts(8))
+}
+
+val rawFeatures = data.map{ parts=>
+  parseData(parts)
+}
+rawFeatures.cache
+
+#### exploring the data ####
+rawFeatures.map{game=> (game._1,game._10)}.sortBy(_._2).take(5).foreach(println) ### least points ###
+rawFeatures.map{game=> (game._1,game._10)}.sortBy(_._2,false).take(5).foreach(println) ### most points ###
+rawFeatures.map{game=> (game._1,game._8)}.sortBy(_._2,false).take(5).foreach(println) ### biggest spread ###
+### number of overs won vs. number of unders ####
+
+val superString = "Super Bowl 50 - February 7th, 2016 |6:30pm|outdoors|grass |60 degrees relative humidity 72%, wind 10 mph|4.5|45.0 |00|2015"
+var parsedSuper = parseData(superString.split('|').map(elem => elem.trim))
+
+### playing with the raw data ###
+rawFeatures.first()
+rawFeatures.filter(m => m._1.contains("Steelers")).take(5)
+rawFeatures.filter(m => m._3 == 0.0).take(5)
+
+
+### calculate stats for continuous vars ###
+val tempStats = rawFeatures.filter(m=> m._5 > -99.0).map{ p => (p._5) }.stats
+val windStats = rawFeatures.filter(m=> m._7 > -99.0).map{ p => (p._7) }.stats
+val spreadStats = rawFeatures.filter(m=> m._8 > -99.0).map{ p => (p._8) }.stats
+val overStats = rawFeatures.map{ p => (p._9) }.stats
+
+def standardize(measure:Double,stats:org.apache.spark.util.StatCounter):Double = {
+   ((measure - stats.min) / (stats.max - stats.min))
+}
+
+def calcDistance(game:(String, Double, Double, Double, Double, Double, Double, Double, Double, Double, String),
+	test:(String, Double, Double, Double, Double, Double, Double, Double, Double, Double,String)):(Double) = { 
+   var distance = 0.0
+   //(parts(0),time,roof,field,temperature,humidity,wind,spread,overunder,points)
+   distance += math.pow(game._2-test._2,2)
+   distance += math.pow(game._3-test._3,2)
+   distance += math.pow(game._4-test._4,2)
+   distance += math.pow(standardize(game._5,tempStats)-standardize(test._5,tempStats),2)
+   distance += math.pow(game._6/100-test._6/100,2)
+   distance += math.pow(standardize(game._7,windStats)-standardize(test._7,windStats),2)
+   distance += math.pow(standardize(game._8,spreadStats)-standardize(test._8,spreadStats),2)
+   distance += math.pow(standardize(game._9,overStats)-standardize(test._9,overStats),2)
+   (distance)
+}
+
+#### calculate distances ####
+val distances = rawFeatures.filter(m=> m._5 > -99.0 && m._6> -99.0 && m._7> -99.0 && m._8> -99.0 && m._11.toDouble >2001).map{ game =>
+   (game._1,calcDistance(game,parsedSuper),game._10)
+}
+distances.sortBy(_._2).take(100).foreach(println)
+
+#### calculate spread vs. points by season ####
+val seasons = rawFeatures.map(_._11).distinct.collect
+
+for (x <-seasons) {
+val seasonStats = seasons.map{x=>
+  val annualOver = rawFeatures.filter(m=> m._9 > -99.0 && m._11==x).map{ p => (p._9) }.stats
+  val annualPoints = rawFeatures.filter(m=> m._10 > -99.0 && m._11==x).map{ p => (p._10) }.stats
+  (x,annualOver.mean,annualPoints.mean)
+}
+
+seasonStats.foreach(println)
+
+
+
+
