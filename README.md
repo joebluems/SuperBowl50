@@ -4,7 +4,6 @@ Read NFL game data into Spark and try to predict the over/under for the big game
 ### Processing the data yourself (optional)...
 
 
-
 ### Launching Spark shell & loading the data into an RDD
 Note: I used spark version 1.5.2 for this analysis. Download Spark here: http://spark.apache.org/downloads.html<br>
 First - start Spark shell, load imports and read the raw data into an RDD<br>
@@ -22,7 +21,7 @@ Next - create a function to parse the raw game data into a new RDD and cache:<br
   var regex = ":.*$".r<br>
   if (regex.replaceAllIn(parts(1),"").toDouble>2 && parts(1).endsWith("pm")) { time = 1.0; }<br>
   var roof = 0.0<br>
-  if (parts(2).matches(".*dome.*") || parts(2).matches(".*closed.*")) { roof = 1.0; }<br>
+  if (parts(2).matches(".\*dome.\*") || parts(2).matches(".\*closed.\*")) { roof = 1.0; }<br>
   var field = 0.0<br>
   if (parts(3).matches("grass.*")) { field = 1.0; }<br>
   var temperature = -99.0<br>
@@ -50,19 +49,19 @@ Run these shell commands to explore the data:<br>
 Find lowest-scoring games:<br>
 <b>rawFeatures.map{game=> (game._1,game._10) }.sortBy(_._2).take(5).foreach(println)<br></b>
 Find highest-scoring games:<br>
-<b>rawFeatures.map{game=> (game._1,game._10) }.sortBy(_._2,false).take(5).foreach(println)<br></b>
+<b>rawFeatures.map{game=> (game.\_1,game.\_10) }.sortBy(_._2,false).take(5).foreach(println)<br></b>
 Find games with the largest spread:<br>
-<b>rawFeatures.map{game=> (game._1,game._8) }.sortBy(_._2,false).take(5).foreach(println)<br></b>
+<b>rawFeatures.map{game=> (game.\_1,game.\_8) }.sortBy(_._2,false).take(5).foreach(println)<br></b>
 Find the number of games where the score was over,under or the same:<br>
-<b>rawFeatures.map{game=> (game._1,game._10-game._9)}.filter(m=> m._2 > 0).count<br>
-rawFeatures.map{game=> (game._1,game._10-game._9)}.filter(m=> m._2 < 0).count<br>
-rawFeatures.map{game=> (game._1,game._10-game._9)}.filter(m=> m._2 == 0).count<br>
+<b>rawFeatures.map{game=> (game.\_1,game.\_10-game.\_9)}.filter(m=> m._2 > 0).count<br>
+rawFeatures.map{game=> (game.\_1,game.\_10-game.\_9)}.filter(m=> m._2 < 0).count<br>
+rawFeatures.map{game=> (game.\_1,game.\_10-game.\_9)}.filter(m=> m._2 == 0).count<br>
 </b><br>
 ### Running the KNN algorithm
 Note: you need these statistics to standardize some of the features:<br>
-<b>val tempStats = rawFeatures.filter(m=> m._5 > -99.0).map{ p => (p._5) }.stats<br>
-val windStats = rawFeatures.filter(m=> m._7 > -99.0).map{ p => (p._7) }.stats<br>
-val spreadStats = rawFeatures.filter(m=> m._8 > -99.0).map{ p => (p._8) }.stats<br>
+<b>val tempStats = rawFeatures.filter(m=> m.\_5 > -99.0).map{ p => (p._5) }.stats<br>
+val windStats = rawFeatures.filter(m=> m.\_7 > -99.0).map{ p => (p._7) }.stats<br>
+val spreadStats = rawFeatures.filter(m=> m.\_8 > -99.0).map{ p => (p._8) }.stats<br>
 val overStats = rawFeatures.map{ p => (p._9) }.stats<br>
 </b><br>
 Note: edit this string to change the forecast for the Superbowl<br>
@@ -78,18 +77,18 @@ def calcDistance(game:(String, Double, Double, Double, Double, Double, Double, D
         test:(String, Double, Double, Double, Double, Double, Double, Double, Double, Double,String)):(Double) = {<br>
    var distance = 0.0<br>
    //(parts(0),time,roof,field,temperature,humidity,wind,spread,overunder,points)<br>
-   distance += math.pow(game._2-test._2,2)<br>
-   distance += math.pow(game._3-test._3,2)<br>
-   distance += math.pow(game._4-test._4,2)<br>
-   distance += math.pow(standardize(game._5,tempStats)-standardize(test._5,tempStats),2)<br>
-   distance += math.pow(game._6/100-test._6/100,2)<br>
-   distance += math.pow(standardize(game._7,windStats)-standardize(test._7,windStats),2)<br>
-   distance += math.pow(standardize(game._8,spreadStats)-standardize(test._8,spreadStats),2)<br>
-   distance += math.pow(standardize(game._9,overStats)-standardize(test._9,overStats),2)<br>
+   distance += math.pow(game.\_2-test._2,2)<br>
+   distance += math.pow(game.\_3-test._3,2)<br>
+   distance += math.pow(game.\_4-test._4,2)<br>
+   distance += math.pow(standardize(game.\_5,tempStats)-standardize(test._5,tempStats),2)<br>
+   distance += math.pow(game.\_6/100-test._6/100,2)<br>
+   distance += math.pow(standardize(game.\_7,windStats)-standardize(test._7,windStats),2)<br>
+   distance += math.pow(standardize(game.\_8,spreadStats)-standardize(test._8,spreadStats),2)<br>
+   distance += math.pow(standardize(game.\_9,overStats)-standardize(test._9,overStats),2)<br>
    (distance)<br>
 }<br>
-val distances = rawFeatures.filter(m=> m._5 > -99.0 && m._6> -99.0 && m._7> -99.0 && m._8> -99.0 && m._11.toDouble >2001).map{ game =><br>
-   (game._1,calcDistance(game,parsedSuper),game._10)<br>
+val distances = rawFeatures.filter(m=> m.\_5 > -99.0 && m.\_6> -99.0 && m.\_7> -99.0 && m.\_8> -99.0 && m._11.toDouble >2001).map{ game =><br>
+   (game.\_1,calcDistance(game,parsedSuper),game._10)<br>
 }<br>
 distances.sortBy(_._2).take(100).foreach(println)<br>
 </b><br>
