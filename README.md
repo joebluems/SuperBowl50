@@ -2,12 +2,16 @@
 Read NFL game data into Spark and try to predict the over/under for the big game
 
 ### Processing the data yourself (optional)...
-
-
+Note: I used this website for the source of NFL boxscores: http://www.pro-football-reference.com/ <br>
+If you want to use the data that's in the blog, you can skip this step and just use the file <b>seasons1990_2015</b>. Otherwise, follow these steps:<br>
+Download the page for one season: <b> linux> curl http://www.pro-football-reference.com/years/2015/games.htm > curl2015 </b><br>
+Pass the downloaded page to the Python code to get the individual game info (can take up to 8 minutes per season): <b>linux> /usr/bin/python parse.py curl2015 > output2015
+</b><br> 
+Modify the Python script as need to get other game information of interest. Combine the output files and move to next step. <br>
 ### Launching Spark shell & loading the data into an RDD
 Note: I used spark version 1.5.2 for this analysis. Download Spark here: http://spark.apache.org/downloads.html<br>
-First - start Spark shell, load imports and read the raw data into an RDD<br>
-linux> /Users/jblue/spark-1.5.2-bin-hadoop2.4<br>
+First - start Spark shell, load imports and read the raw data into an RDD (you may need to point Spark to your file):<br>
+linux> cd spark-1.5.2-bin-hadoop2.4<br>
 linux> ./bin/spark-shell<br>
 <b>import scala.math<br>
 import scala.util.Try<br>
