@@ -48,8 +48,7 @@ rawFeatures.cache<br>
 ### Exploring the data
 Run these shell commands to explore the data:<br>
 Find lowest-scoring games:<br>
-<plaintext>
-<b>rawFeatures.map{game=> (game._1, game._10) }.sortBy(_._2).take(5).foreach(println)<br></b>
+<b>rawFeatures.map{game=> (game._1,game._10) }.sortBy(_._2).take(5).foreach(println)<br></b>
 Find highest-scoring games:<br>
 <b>rawFeatures.map{game=> (game._1,game._10) }.sortBy(_._2,false).take(5).foreach(println)<br></b>
 Find games with the largest spread:<br>
@@ -59,7 +58,6 @@ Find the number of games where the score was over,under or the same:<br>
 rawFeatures.map{game=> (game._1,game._10-game._9)}.filter(m=> m._2 < 0).count<br>
 rawFeatures.map{game=> (game._1,game._10-game._9)}.filter(m=> m._2 == 0).count<br>
 </b><br>
-</plaintext>
 ### Running the KNN algorithm
 Note: you need these statistics to standardize some of the features:<br>
 <b>val tempStats = rawFeatures.filter(m=> m._5 > -99.0).map{ p => (p._5) }.stats<br>
